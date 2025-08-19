@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Test_Background</string>
+    <string name="accessibility_service_description">Service to detect current foreground app</string>
+
 </resources>

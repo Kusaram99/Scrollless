@@ -1,15 +1,37 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.test_background">
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- new added -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" /> -->
+    <!-- to wakeup service after some second delay -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- FORGROUND SERVICE -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Android 14+ requires -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- System alert window -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <!-- to track foreground app (it will not open popup user should do monually in setting) -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.GET_TASKS" />
+
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
+
 
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
-      android:allowBackup="false"
+      android:allowBackup="true"
       android:theme="@style/AppTheme"
-      android:supportsRtl="true">
+      android:supportsRtl="true"
+      android:usesCleartextTraffic="true"
+      android:requestLegacyExternalStorage="true" 
+      tools:targetApi="31">
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -22,5 +44,45 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <service 
+          android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask"
+          android:foregroundServiceType="dataSync"
+        />
+      <!-- 60+ version of react-native -->
+      <service android:name="com.voximplant.foregroundservice.VIForegroundService"> </service>
+
+      <!-- To overlay alert message -->
+      <service android:name=".OverlayService" android:exported="false" /> 
+
+      <!-- MyAccesibilityServices -->
+      <service
+          android:name=".MyAccessibilityService"
+          android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+          android:exported="true">
+          <intent-filter>
+              <action android:name="android.accessibilityservice.AccessibilityService" />
+          </intent-filter>
+          <meta-data
+              android:name="android.accessibilityservice"
+              android:resource="@xml/accessibility_service_config" />
+      </service>
+
+      <!-- ForegroundAppAccessibilityService -->
+      <!-- This service is used to detect the current foreground app -->
+      <service
+          android:name=".ForegroundAppAccessibilityService"
+          android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+          android:exported="true">
+          <intent-filter>
+              <action android:name="android.accessibilityservice.AccessibilityService" />
+          </intent-filter>
+
+          <meta-data
+              android:name="android.accessibilityservice"
+              android:resource="@xml/accessibility_service_config" />
+      </service>
+
+
     </application>
-</manifest>
+</manifest>  

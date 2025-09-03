@@ -11,7 +11,8 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 
 
-// custome packages
+// ✅ Import your custom package
+import com.test_background.InstalledAppsPackage
 import com.test_background.ForegroundAppPackage
 
 class MainApplication : Application(), ReactApplication {
@@ -22,6 +23,7 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               add(ForegroundAppPackage())
+              add(InstalledAppsPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

@@ -2,20 +2,15 @@ package com.test_background;
 
 import android.net.Uri;
 import com.facebook.react.bridge.ReactContext;
-
 import android.os.PowerManager;
-
 import android.app.usage.UsageStats;
-
 import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.provider.Settings;
-
 import androidx.annotation.NonNull;
-
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -127,7 +122,7 @@ public class ForegroundAppModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void showOverlay(String appName) {
+    public void showOverlay(String heading, String message) {
         if (!Settings.canDrawOverlays(getReactApplicationContext())) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:" + getReactApplicationContext().getPackageName()));
@@ -137,7 +132,8 @@ public class ForegroundAppModule extends ReactContextBaseJavaModule {
         }
 
         Intent intent = new Intent(getReactApplicationContext(), OverlayService.class);
-        intent.putExtra("appName", appName);
+        intent.putExtra("heading", heading);
+        intent.putExtra("message", message);
         getReactApplicationContext().startService(intent);
     }
 

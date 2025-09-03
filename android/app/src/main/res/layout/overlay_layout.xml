@@ -1,26 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:gravity="center"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#AA000000">
+    android:layout_height="match_parent" 
+    android:gravity="center">
 
-    <TextView
-        android:id="@+id/messageText"
+    <LinearLayout
+        android:orientation="vertical"
+        android:background="@android:color/white"
+        android:padding="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
-        android:textColor="#FFFFFF"
-        android:text="Time limit exceeded"
-        android:layout_marginBottom="20dp"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:elevation="8dp"
+        android:layout_margin="20dp">
 
-    <Button
-        android:id="@+id/closeButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Close"
-        android:layout_gravity="center"/>
-</LinearLayout>
+        <!-- Heading -->
+        <TextView
+            android:id="@+id/popupHeading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚠️ Alert"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Message (can be empty or dynamic from RN) -->
+        <TextView
+            android:id="@+id/popupMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time limit exceeded for app"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Close Button -->
+        <Button
+            android:id="@+id/closeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Close" />
+
+    </LinearLayout>
+</FrameLayout>

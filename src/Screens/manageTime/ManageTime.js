@@ -18,15 +18,17 @@ const getTodayKey = () =>
 
 const ManageTime = () => {
   const { getApps, updateApp } = useAppStorage(); // add updateApp in hook
-  const [apps, setApps] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [newLimit, setNewLimit] = useState('');
+  const [apps, setApps] = useState([]); 
+  const [selectedApp, setSelectedApp] = useState(null); 
   const [modalResetVisible, setModalResetVisible] = useState(false);
   // const [resetApp, setResetApp] = useState(null);
   const todayKey = new Date().toLocaleDateString('en-CA', {
     timeZone: 'Asia/Kolkata',
   }); // YYYY-MM-DD
+
+  const defaultTimeLimit = 20 * 60; // default time limit in seconds (30 minutes)
+
+  // fetch apps from storage
 
   useFocusEffect(
     useCallback(() => {
@@ -46,48 +48,9 @@ const ManageTime = () => {
           console.error('Error fetching apps:', error);
         }
       };
-
       fetchApps();
     }, []),
   );
-
-  // get today key
-
-  // handle set limit press
-  const handleSetLimitPress = app => {
-    setSelectedApp(app);
-    setNewLimit(app.timeLimitInMinutes.toString());
-    setModalVisible(true);
-  };
-
-  // update timing handler
-  const handleSave = async () => {
-    if (!newLimit || isNaN(newLimit)) return; // Validate input(check if newLimit is not empty and is a number) 
-    // get today's key
-    const todayKey = getTodayKey();
-    // console.log("Today's key: ", key);
-
-    const { usageHistory } = selectedApp;
-
-    // if usageHistory is undefined
-    if (!usageHistory) return;
-    // reset today's usage to 0 and time limit to default 30 minutes
-    const updatedApp = {
-      ...selectedApp,
-      timeLimitInMinutes: parseInt(newLimit), // set custom time limit
-      usageHistory: { ...usageHistory, [todayKey]: 0 }, // reset today's usage to 0
-    };
-
-    await updateApp(updatedApp.packageName, updatedApp); // save updated data
-    const updatedApps = apps.map(app =>
-      app.packageName === updatedApp.packageName ? updatedApp : app,
-    );
-
-    // update state to reflect changes in UI
-    setApps(updatedApps);
-    setModalVisible(false);
-    setSelectedApp(null);
-  };
 
   // reset alert handler
   const resetHanlder = app => {
@@ -102,21 +65,29 @@ const ManageTime = () => {
         // get today's key
         const todayKey = getTodayKey();
         const { usageHistory } = selectedApp;
-        // if usageHistory is undefined 
+        // if usageHistory is undefined
         if (!usageHistory) return;
+        // extract used time for today
+        const usedTime = usageHistory ? usageHistory[todayKey] || 0 : 0;
+        console.log('Used time for today: ', usedTime);
+        // if used time is greater than default time limit then show alert and return
+        if (usedTime >= defaultTimeLimit) {
+          alert(
+            `You have already used ${usedTime} minutes today. You can not reset to default time limit of ${defaultTimeLimit} minutes.`,
+          );
+          setModalResetVisible(false);
+          setSelectedApp(null);
+          return;
+        }
         // reset today's usage to 0 and time limit to default 30 minutes
         const updatedApp = {
           ...selectedApp,
           timeLimitInMinutes: 30, // reset to default 30 minutes
-          usageHistory: { ...usageHistory, [todayKey]: 0 }, // reset today's usage to 0
         };
 
-        await updateApp(updatedApp.packageName, updatedApp); // save updated data
-        const updatedApps = apps.map(app =>
-          app.packageName === updatedApp.packageName ? updatedApp : app,
-        );
-        setApps(updatedApps);
-        setSelectedApp(null);
+        await updateApp(updatedApp.packageName, updatedApp); // save updated data to storage
+        // update state to reflect changes in UI
+        updateAppState(updatedApp);
       }
       setModalResetVisible(false);
       console.log('resetAppDataHandler isReady: ', isReady);
@@ -125,33 +96,119 @@ const ManageTime = () => {
     }
   };
 
+  // handle increase time limit by 10 minutes
+  const handleIncrease = async app => {
+    const increment = 10; // minutes to increase
+    const { timeLimitInMinutes } = app;
+
+    // New time limit after increment
+    const newTimeLimit = timeLimitInMinutes + increment;
+    // Update app object
+    const updatedApp = {
+      ...app,
+      timeLimitInMinutes: newTimeLimit,
+    };
+    // Update storage
+    await updateApp(app.packageName, updatedApp);
+    // fetchApps(); // Refresh the app list
+    updateAppState(updatedApp);
+  };
+
+  // handle decrease time limit by 10 minutes
+  const handleDecrease = async app => {
+    const todayKey = getTodayKey();
+    const { timeLimitInMinutes, usageHistory } = app;
+    const usedTime = usageHistory ? usageHistory[todayKey] || 0 : 0;
+    const oldTimeLimit = timeLimitInMinutes * 60; // convert to seconds
+    const decrement = 10; // minutes to decrease
+    // user can not decrease time limit less than used time limit and default time limit
+    if (
+      usedTime >= oldTimeLimit - decrement ||
+      defaultTimeLimit >= oldTimeLimit - decrement
+    ) {
+      alert(
+        `You can not decrease time limit. Used time is ${(
+          usedTime / 60
+        ).toFixed(2)} min and default time limit is ${(
+          defaultTimeLimit / 60
+        ).toFixed(2)} min`,
+      );
+      return;
+    }
+    // New time limit after decrement
+    const newTimeLimit = timeLimitInMinutes - decrement;
+    // Update app object
+    const updatedApp = {
+      ...app,
+      timeLimitInMinutes: newTimeLimit,
+    };
+    // Update storage
+    await updateApp(app.packageName, updatedApp);
+    // fetchApps(); // Refresh the app list
+    updateAppState(updatedApp);
+  };
+
+  // update state to reflect changes in UI
+  const updateAppState = updatedApp => {
+    const updatedApps = apps.map(app =>
+      app.packageName === updatedApp.packageName ? updatedApp : app,
+    );
+    setApps(updatedApps);
+    setSelectedApp(null);
+  };
+
+  // 2.1. user can not decrease time limit less than used time and default time
+  // (usedTime >= oldtimeLimit - 10) or (defaultTime >= oldtimeLimit - 10) show alert (else) decrease time limit
+
+  // time exicution handler to show time limit in minutes and hours
+  const formatTime = app => {
+    const { timeLimitInMinutes } = app;
+    const minutes = timeLimitInMinutes;
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hrs} hr ${mins} min`;
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.appContainer}>
       <View style={styles.appDetails}>
         <Image source={{ uri: item.iconBase64 }} style={styles.icon} />
         <View style={styles.textContainer}>
           <Text style={styles.appName}>{item.appName}</Text>
+          <Text style={styles.timeInfo}>⏱ Limit: {formatTime(item)}</Text>
           <Text style={styles.timeInfo}>
-            ⏱ Limit: {item.timeLimitInMinutes} min
-          </Text>
-          <Text style={styles.timeInfo}>
-            🕒 Used: {item.usageHistory[todayKey]} min
+            🕒 Used:{' '}
+            {item.usageHistory[todayKey] ? item.usageHistory[todayKey] : 0} min
           </Text>
         </View>
       </View>
 
       <View style={styles.actions}>
+        {/* Increase Button */}
         <Pressable
-          style={styles.button}
-          onPress={() => handleSetLimitPress(item)}
+          style={[styles.button, styles.increaseButton]}
+          onPress={() => handleIncrease(item)}
         >
-          <Text style={styles.buttonText}>Custom time limit</Text>
+          <Text style={styles.buttonText}>+10 min</Text>
         </Pressable>
+
+        {/* Decrease Button */}
+        <Pressable
+          style={[styles.button, styles.decreaseButton]}
+          onPress={() => handleDecrease(item)}
+        >
+          <Text style={styles.buttonText}>-10 min</Text>
+        </Pressable>
+
+        {/* Reset Button (kept same) */}
         <Pressable
           onPress={() => resetHanlder(item)}
           style={[styles.button, styles.resetButton]}
         >
-          <Text style={[styles.buttonText]}>Reset & inc 30 min</Text>
+          <Text style={styles.buttonText}>Set Default(30)</Text>
         </Pressable>
       </View>
     </View>
@@ -159,7 +216,7 @@ const ManageTime = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>⏳ Manage App Time</Text>
+      <Text style={styles.heading}>Manage App Time</Text>
       <FlatList
         data={apps}
         keyExtractor={item => item.packageName}
@@ -167,54 +224,12 @@ const ManageTime = () => {
         contentContainerStyle={styles.list}
       />
 
-      {/* Modal for setting time limit */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>
-              Set Time Limit for{' '}
-              <Text style={{ color: 'red' }}> {selectedApp?.appName}</Text>
-            </Text>
-            <Text
-              style={{
-                marginTop: 5,
-                marginBottom: 3,
-                fontSize: 10,
-                fontWeight: '500',
-              }}
-            >
-              Add Time In Minutes:{' '}
-            </Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              placeholder="Enter time in minutes"
-              value={newLimit}
-              onChangeText={setNewLimit}
-            />
-            <View style={styles.modalButtons}>
-              <Pressable style={styles.modalButton} onPress={handleSave}>
-                <Text style={styles.modalButtonText}>Save</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={[styles.modalButtonText, styles.cancelText]}>
-                  Cancel
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       {/* ============== model 2 for the reset timing and show alert =============== */}
       <Modal visible={modalResetVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>
-              Do you want to <Text style={{ color: 'red' }}> Reset </Text>{' '}
+              Do you want to <Text style={{ color: 'red' }}> Set </Text> Default
               timing of{' '}
               <Text style={{ color: 'red' }}> {selectedApp?.appName} </Text>{' '}
             </Text>
@@ -354,5 +369,12 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: '#333',
+  },
+  increaseButton: {
+    backgroundColor: '#4CAF50', // green
+  },
+
+  decreaseButton: {
+    backgroundColor: '#F44336', // red
   },
 });

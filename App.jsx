@@ -16,40 +16,41 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Home from './src/Screens/home/Home';
 import ImportApp from './src/Screens/importApp/ImportApp';
 import ManageTime from './src/Screens/manageTime/ManageTime';
-import RemixIcon from "react-native-remix-icon";
+import RemixIcon from 'react-native-remix-icon';
 
 // hooks
 import { useAppStorage } from './src/Hooks/useAppStorage';
 // context api
-import { useAppUsage } from './src/contextAPI/contextapi';
+// import { useAppUsage } from './src/contextAPI/contextapi';
 
 const { ForegroundApp, InstalledApps } = NativeModules;
-const getTodayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+const getTodayKey = () =>
+  new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
 // Want old code=========================================== Replace time tracking with context api to state management
-const App = () => { 
+const App = () => {
   // hook functions
   const { getApps, updateUsedTime } = useAppStorage();
   const lastAppRef = useRef(null);
-  const lastTimestampRef = useRef(null); 
+  const lastTimestampRef = useRef(null);
 
   // current app vi
   const appUsageRef = useRef(null);
 
   // context api
-  const { usageData, setUsageData } = useAppUsage();
-  console.log('usageData from context: ', usageData);
+  // const { usageData, setUsageData } = useAppUsage();
+  // console.log('usageData from context: ', usageData);
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  const initializeImportedApps = useCallback(async () => { 
-     // for testing only
+  const initializeImportedApps = useCallback(async () => {
+    // for testing only
 
     const storedApps = await getApps();
     console.log('storedApps from storage: ', storedApps);
 
     // update ref
-    appUsageRef.current = storedApps; // Store in ref for quick access 
+    appUsageRef.current = storedApps; // Store in ref for quick access
 
     // start background service
     startBackgroundService();
@@ -127,7 +128,8 @@ const App = () => {
       const lastApp = lastAppRef.current;
       const lastTimestamp = lastTimestampRef.current;
       const appUsage = appUsageRef.current || {};
-      console.log('lastApp===: ', lastApp);
+      // console.log('lastApp===: ', lastApp);
+      // console.log('appUsage===: ', appUsage);
 
       // 7️⃣ If we were tracking the same app and timestamp is valid
       if (appUsage[lastApp] && lastTimestamp) {
@@ -146,24 +148,21 @@ const App = () => {
           if (updated[lastApp]) {
             // 1️⃣2️⃣ Get existing usage or 0 if not present for today
             const currentUsage = updated[lastApp].usageHistory[todayKey] || 0;
-            const total_used_time = updated[lastApp].usageHistory[todayKey+':total_used'] || 0;
 
-            console.log("youuooooo:---------------- ", updated[lastApp].usageHistory[todayKey+':total_used'])
+            // console.log("youuooooo:---------------- ", updated[lastApp].usageHistory[todayKey+':total_used'])
 
             // 1️⃣3️⃣ Add the new duration to existing usage
             updated[lastApp].usageHistory[todayKey] =
               currentUsage + deltaSeconds;
-            // updating totaled used time of today (included with increased or reset time)
-            updated[lastApp].usageHistory[todayKey+':total_used'] = total_used_time + deltaSeconds
-            
+
             // 1️⃣4️⃣ Get usage limit in seconds (limit is stored in minutes)
             const limit = updated[lastApp].timeLimitInMinutes * 60;
 
             // 1️⃣5️⃣ If user has crossed the time limit
-            console.log(
-              `Time limit is exceeded for ${lastApp}: `,
-              updated[lastApp].usageHistory[todayKey],
-            );
+            // console.log(
+            //   `Time limit is exceeded for ${lastApp}: `,
+            //   updated[lastApp].usageHistory[todayKey],
+            // );
             if (updated[lastApp].usageHistory[todayKey] >= limit) {
               // 1️⃣6️⃣ Show a blocking alert and update that app’s data
               updated[lastApp] = await showBlockingAlert(
@@ -175,7 +174,7 @@ const App = () => {
 
             // appUsageRef.current = updated; // Update the ref with new data
             // await updateUsedTime(updated); // Persist the updated usage data
-           await updateAppData(updated);
+            await updateAppData(lastApp, updated);
             console.log('Updated usage data saved.');
           }
         }
@@ -189,21 +188,23 @@ const App = () => {
         lastTimestampRef.current = null;
       }
     } catch (err) {
-      console.warn("error in updatePackageTracking func: ", err);
+      console.warn('error in updatePackageTracking func: ', err);
     }
   };
 
   // update app data
-  const updateAppData = async (data)=>{
+  const updateAppData = async (packageName, data) => {
     // console.log('updateAppData -------------: ', data.packageName);
+    const todayKey = getTodayKey();
     // update data in localstorage
-    await updateUsedTime(data);
+    await updateUsedTime(packageName, data);
     // get updated data from localstorage
-    const updatedData = await getApps()
+    const updatedData = await getApps();
+    // console.log('updatedData from updateAppData func: ', updatedData);
     // update data for current tracking
     appUsageRef.current = updatedData;
-    return
-  }
+    return;
+  };
 
   // start background service
   const backgroundTask = async ({ delay }) => {
@@ -311,12 +312,12 @@ const MyTabs = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === "Home") {
-            iconName = focused ? "home-5-fill" : "home-5-line";
-          } else if (route.name === "Import App") {
-            iconName = focused ? "apps-2-fill" : "apps-2-line";
-          } else if (route.name === "Manage Time") {
-            iconName = focused ? "time-fill" : "time-line";
+          if (route.name === 'Home') {
+            iconName = focused ? 'home-5-fill' : 'home-5-line';
+          } else if (route.name === 'Import App') {
+            iconName = focused ? 'apps-2-fill' : 'apps-2-line';
+          } else if (route.name === 'Manage Time') {
+            iconName = focused ? 'time-fill' : 'time-line';
           }
 
           return <RemixIcon name={iconName} size={size} color={color} />;
@@ -328,7 +329,7 @@ const MyTabs = () => {
       <Tab.Screen name="Import App" component={ImportApp} />
     </Tab.Navigator>
   );
-}; 
+};
 
 export default App;
 

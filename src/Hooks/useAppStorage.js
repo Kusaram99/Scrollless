@@ -56,11 +56,39 @@ export const useAppStorage = () => {
   };
 
   // update used time of imported apps
-  const updateUsedTime = async updatedData => {
+  const updateUsedTime = async (packageName, dataFromBackground) => {
     try {
-      const newData = { ...updatedData };
-      console.log('updateUsedTime function: ', newData);
+      const allApps = await getApps();
+      if (!allApps || Object.keys(allApps).length === 0) {
+        console.log('No apps found in storage');
+        Alert.alert('No apps found to update used time');
+        return false;
+      }
+      // extract current app data (to update changed time in UI if needed)
+      const currentAppFromBackground = dataFromBackground[packageName]; // extract from dataFromBackground
+      const currentAppFromStorage = allApps[packageName]; // extract from storage 
+
+      // check if app exists in either source
+      if (!currentAppFromBackground || !currentAppFromStorage) {
+        console.log('No app found with packageName: ', packageName);
+        Alert.alert('No app found to update used time');
+        return false;
+      } 
+      
+      // merge data: keep timeLimitInMinutes from storage, other fields from background
+      const timeLimitInMinutesFromStorage = currentAppFromStorage ? currentAppFromStorage.timeLimitInMinutes : null;
+      const mixedDataFromStorageAndBackground = {
+        ...currentAppFromBackground,
+        timeLimitInMinutes: timeLimitInMinutesFromStorage,
+      } 
+ 
+      // update the specific app's used time
+      const updatedData = { ...allApps, [packageName]: mixedDataFromStorageAndBackground };
+      console.log('updateUsedTime function console: ', updatedData);
+      // set updated data to storage
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData));
+      // if data saved succefully
+      return true;
     } catch (e) {
       console.error('Failed to update used time', e);
     }

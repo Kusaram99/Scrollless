@@ -55,7 +55,7 @@ const ImportApp = () => {
         packageName: item.packageName,
         appName: item.appName,
         iconBase64: `data:image/png;base64,${item.iconBase64}`,
-        timeLimitInMinutes: 1, // Default limit to 30 mins
+        timeLimitInMinutes: 20, // Default limit to 30 mins
         usageHistory: { [todayKey]: 0, [todayKey + ':total_used']: 0 },
         lastNotifiedAt: null,
       };

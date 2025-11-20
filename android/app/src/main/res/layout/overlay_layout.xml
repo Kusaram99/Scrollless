@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" 
-    android:gravity="center">
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:background="#80000000">
 
     <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:gravity="center"
+        android:layout_margin="40dp"
         android:background="@android:color/white"
         android:padding="20dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:elevation="8dp"
-        android:layout_margin="20dp">
+        android:elevation="10dp"
+        android:layout_gravity="center">
 
-        <!-- Heading -->
         <TextView
             android:id="@+id/popupHeading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="⚠️ Alert"
-            android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
+            android:textSize="22sp"
+            android:textColor="@android:color/holo_red_dark"
+            android:gravity="center"
             android:layout_marginBottom="12dp" />
 
-        <!-- Message (can be empty or dynamic from RN) -->
         <TextView
             android:id="@+id/popupMessage"
             android:layout_width="wrap_content"
@@ -34,14 +34,16 @@
             android:text="Time limit exceeded for app"
             android:textSize="16sp"
             android:textColor="@android:color/black"
+            android:gravity="center"
             android:layout_marginBottom="20dp" />
 
-        <!-- Close Button -->
         <Button
             android:id="@+id/closeButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Close" />
+            android:text="Close"
+            android:gravity="center" />
 
     </LinearLayout>
+
 </FrameLayout>

@@ -70,7 +70,7 @@ const App = () => {
       const lastNotified = updatedAppData.lastNotifiedAt || 0;
 
       if (now - lastNotified > 10000) {
-        await ForegroundApp.showOverlay(appName, 'Your time limit is exceeded');
+        await ForegroundApp.showOverlay(appName, 'Time’s up! Let’s get back to your goals 💪');
 
         console.log('showBlockingAlert: ', packageName);
         // Update last notified time

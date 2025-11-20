@@ -18,8 +18,8 @@ const getTodayKey = () =>
 
 const ManageTime = () => {
   const { getApps, updateApp } = useAppStorage(); // add updateApp in hook
-  const [apps, setApps] = useState([]); 
-  const [selectedApp, setSelectedApp] = useState(null); 
+  const [apps, setApps] = useState([]);
+  const [selectedApp, setSelectedApp] = useState(null);
   const [modalResetVisible, setModalResetVisible] = useState(false);
   // const [resetApp, setResetApp] = useState(null);
   const todayKey = new Date().toLocaleDateString('en-CA', {
@@ -72,8 +72,24 @@ const ManageTime = () => {
         console.log('Used time for today: ', usedTime);
         // if used time is greater than default time limit then show alert and return
         if (usedTime >= defaultTimeLimit) {
+          // Format used time for alert
+          let usedTimeStr = '';
+          if (usedTime < 3600) {
+            // less than 1 hour, show in minutes
+            const minutes = Math.floor(usedTime / 60);
+            usedTimeStr = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+          } else {
+            // 1 hour or more, show in hours and minutes
+            const hours = Math.floor(usedTime / 3600);
+            const minutes = Math.floor((usedTime % 3600) / 60);
+            usedTimeStr = `${hours} hour${hours !== 1 ? 's' : ''}`;
+            if (minutes > 0) {
+              usedTimeStr += ` ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            }
+          }
+          const defaultLimitMin = Math.floor(defaultTimeLimit / 60);
           alert(
-            `You have already used ${usedTime} minutes today. You can not reset to default time limit of ${defaultTimeLimit} minutes.`,
+            `You have already used ${usedTimeStr} today. You can not reset to default time limit of ${defaultLimitMin} minutes.`,
           );
           setModalResetVisible(false);
           setSelectedApp(null);
@@ -127,7 +143,7 @@ const ManageTime = () => {
       defaultTimeLimit >= oldTimeLimit - decrement
     ) {
       alert(
-        `You can not decrease time limit. Used time is ${(
+        `You can not set time limit less than default time limit. Used time is ${(
           usedTime / 60
         ).toFixed(2)} min and default time limit is ${(
           defaultTimeLimit / 60
@@ -172,6 +188,30 @@ const ManageTime = () => {
     return `${hrs} hr ${mins} min`;
   };
 
+  // used time handler to show used time in minutes and hours
+  const formatUsedTime = app => {
+    const { usageHistory } = app;
+    const usedTimeInSecond = usageHistory ? usageHistory[todayKey] || 0 : 0;
+    if (usedTimeInSecond < 60) {
+      return `${usedTimeInSecond}s`; // less than a minute
+    }
+
+    const minutes = Math.floor(usedTimeInSecond / 60);
+    if (minutes < 60) {
+      return `${minutes}m`; // show in minutes if < 1h
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    // If exact hour
+    if (remainingMinutes === 0) {
+      return `${hours}h`;
+    }
+
+    return `${hours}h ${remainingMinutes}m`;
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.appContainer}>
       <View style={styles.appDetails}>
@@ -179,10 +219,7 @@ const ManageTime = () => {
         <View style={styles.textContainer}>
           <Text style={styles.appName}>{item.appName}</Text>
           <Text style={styles.timeInfo}>⏱ Limit: {formatTime(item)}</Text>
-          <Text style={styles.timeInfo}>
-            🕒 Used:{' '}
-            {item.usageHistory[todayKey] ? item.usageHistory[todayKey] : 0} min
-          </Text>
+          <Text style={styles.timeInfo}>🕒 Used: {formatUsedTime(item)}</Text>
         </View>
       </View>
 
@@ -204,12 +241,12 @@ const ManageTime = () => {
         </Pressable>
 
         {/* Reset Button (kept same) */}
-        <Pressable
+        {/* <Pressable
           onPress={() => resetHanlder(item)}
           style={[styles.button, styles.resetButton]}
         >
           <Text style={styles.buttonText}>Set Default(30)</Text>
-        </Pressable>
+        </Pressable> */}
       </View>
     </View>
   );

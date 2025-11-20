@@ -86,10 +86,10 @@ const App = () => {
   // It uses useCallback to avoid unnecessary re-creations of the function.
   const getCurrentAppUsageDuration = useCallback(async () => {
     try {
-      // 1️⃣ Check if the screen is ON using native module
+      // Check if the screen is ON using native module
       const isScreenOn = await ForegroundApp.isScreenOn();
       console.log('isScreenOn:', isScreenOn);
-      // 2️⃣ If screen is OFF, skip tracking logic and reset references
+      // If screen is OFF, skip tracking logic and reset references
       if (!isScreenOn) {
         console.log('Screen is off. Skipping usage tracking.');
 
@@ -99,7 +99,7 @@ const App = () => {
         return; // Exit early since there's nothing to track when screen is off
       }
 
-      // 4️⃣ Get the currently open foreground app from native code
+      // Get the currently open foreground app from native code
       const packageName = await ForegroundApp.getCurrentForegroundApp();
       lastAppRef.current = packageName; // Update last known app
       console.log('Current foreground app:', packageName);
@@ -107,13 +107,13 @@ const App = () => {
 
       // update lastAppRef
     } catch (err) {
-      // 2️⃣1️⃣ Catch and log any errors from native calls or logic
+      // Catch and log any errors from native calls or logic
       console.warn(err.code);
       // check app is still in foreground
       if (err.code === 'NO_APP') {
         await updatePackageTracking();
       }
-      console.log('Error in foreground detection:', err.message);
+      // console.warn('Error in foreground detection:', err);
     }
   }, []);
   // }, [appUsage, saveAppUsage, showBlockingAlert]);
@@ -121,50 +121,48 @@ const App = () => {
   // update current package tracking
   const updatePackageTracking = async _ => {
     try {
-      // 5️⃣ Get the current time in milliseconds
+      // Get the current time in milliseconds
       const currentTime = Date.now();
       // console.log('appUsage===:-------- ', appUsage);
-      // 6️⃣ Retrieve the previously stored app and its timestamp
+      // Retrieve the previously stored app and its timestamp
       const lastApp = lastAppRef.current;
       const lastTimestamp = lastTimestampRef.current;
       const appUsage = appUsageRef.current || {};
-      // console.log('lastApp===: ', lastApp);
+      console.log('lastApp===: ', lastApp);
       // console.log('appUsage===: ', appUsage);
 
-      // 7️⃣ If we were tracking the same app and timestamp is valid
+      // If we were tracking the same app and timestamp is valid
       if (appUsage[lastApp] && lastTimestamp) {
-        // 8️⃣ Calculate time spent in this app since the last check (in seconds)
+        // Calculate time spent in this app since the last check (in seconds)
         const deltaSeconds = Math.floor((currentTime - lastTimestamp) / 1000);
         console.log('deltaSeconds=======: ', deltaSeconds);
 
         if (deltaSeconds > 0) {
-          // 9️⃣ Make a copy of the app usage object to update it
+          // Make a copy of the app usage object to update it
           const updated = { ...appUsage };
 
-          // 🔟 Get today's date key to store daily usage (e.g., "2025-08-07")
+          // Get today's date key to store daily usage (e.g., "2025-08-07")
           const todayKey = getTodayKey();
 
-          // 1️⃣1️⃣ If this app is in the tracked list
+          // If this app is in the tracked list
           if (updated[lastApp]) {
-            // 1️⃣2️⃣ Get existing usage or 0 if not present for today
-            const currentUsage = updated[lastApp].usageHistory[todayKey] || 0;
+            // Get existing usage or 0 if not present for today
+            const currentUsage = updated[lastApp].usageHistory[todayKey] || 0; 
 
-            // console.log("youuooooo:---------------- ", updated[lastApp].usageHistory[todayKey+':total_used'])
-
-            // 1️⃣3️⃣ Add the new duration to existing usage
+            // Add the new duration to existing usage
             updated[lastApp].usageHistory[todayKey] =
               currentUsage + deltaSeconds;
 
-            // 1️⃣4️⃣ Get usage limit in seconds (limit is stored in minutes)
+            // Get usage limit in seconds (limit is stored in minutes)
             const limit = updated[lastApp].timeLimitInMinutes * 60;
 
-            // 1️⃣5️⃣ If user has crossed the time limit
+            // If user has crossed the time limit
             // console.log(
             //   `Time limit is exceeded for ${lastApp}: `,
             //   updated[lastApp].usageHistory[todayKey],
             // );
             if (updated[lastApp].usageHistory[todayKey] >= limit) {
-              // 1️⃣6️⃣ Show a blocking alert and update that app’s data
+              // Show a blocking alert and update that app’s data
               updated[lastApp] = await showBlockingAlert(
                 updated[lastApp].appName,
                 updated[lastApp],

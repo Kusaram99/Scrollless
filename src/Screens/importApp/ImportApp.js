@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View, Image, Switch, FlatList } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getInstalledApps } from '../InstalledApps';
 import { useAppStorage } from '../../Hooks/useAppStorage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ImportApp = () => {
   const [apps, setApps] = useState([]);
@@ -26,6 +27,8 @@ const ImportApp = () => {
           toggles[app.packageName] = importedPackages.includes(app.packageName);
         });
 
+        // console.log('toggles: ', toggles);
+
         setApps(installedApps);
         setToggleStates(toggles);
       } catch (err) {
@@ -35,7 +38,7 @@ const ImportApp = () => {
 
     loadApps();
   }, []);
-
+ 
   // Handle toggle change
   const handleToggle = async item => {
     const isCurrentlyOn = toggleStates[item.packageName];
@@ -55,8 +58,8 @@ const ImportApp = () => {
         packageName: item.packageName,
         appName: item.appName,
         iconBase64: `data:image/png;base64,${item.iconBase64}`,
-        timeLimitInMinutes: 20, // Default limit to 30 mins
-        usageHistory: { [todayKey]: 0, [todayKey + ':total_used']: 0 },
+        timeLimitInMinutes: 1, // Default limit to 30 mins
+        usageHistory: { [todayKey]: 0 }, // Initialize today's usage to 0
         lastNotifiedAt: null,
       };
       await saveApps(appData);
@@ -75,7 +78,7 @@ const ImportApp = () => {
       />
       <View style={styles.textContainer}>
         <Text style={styles.appName}>{item.appName}</Text>
-        <Text style={styles.pkgName}>{item.packageName}</Text>
+        {/* <Text style={styles.pkgName}>{item.packageName}</Text> */}
       </View>
       <Switch
         value={toggleStates[item.packageName] || false}

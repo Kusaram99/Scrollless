@@ -8,17 +8,21 @@ const ImportApp = () => {
   const [apps, setApps] = useState([]);
   const [toggleStates, setToggleStates] = useState({});
   const { saveApps, deleteApp, getApps } = useAppStorage();
+  const [loader, setLoader] = useState(false);
 
   // Load installed apps + mark ON/OFF based on saved apps
   useEffect(() => {
     const loadApps = async () => {
       try {
+        // start loading
+        setLoader(true);
+        // fetching apps from device
         const installedApps = await getInstalledApps();
+        // fetching apps from localstorage
         const savedApps = await getApps();
-        console.log('installedApps: ', installedApps);
+        // console.log('installedApps: ', installedApps);
 
         // Extract all imported packageNames
-        // const importedPackages = savedApps.map(app => app.packageName);
         const importedPackages = Object.keys(savedApps);
 
         // Create toggle states based on stored data
@@ -33,12 +37,14 @@ const ImportApp = () => {
         setToggleStates(toggles);
       } catch (err) {
         console.error('Failed to load apps or toggles', err);
+      } finally {
+        setLoader(false);
       }
     };
 
     loadApps();
   }, []);
- 
+
   // Handle toggle change
   const handleToggle = async item => {
     const isCurrentlyOn = toggleStates[item.packageName];
@@ -87,6 +93,11 @@ const ImportApp = () => {
     </View>
   );
 
+  // loader
+  if (loader) {
+    return <Text style={styles.loading}>Loading...</Text>;
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Import Application</Text>
@@ -96,7 +107,7 @@ const ImportApp = () => {
         renderItem={renderApp}
         contentContainerStyle={styles.list}
       />
-    </View>
+    </View> 
   );
 };
 
@@ -105,7 +116,9 @@ export default ImportApp;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingTop: 40,
+    // paddingBottom: 10,
+    paddingHorizontal: 20,
   },
   heading: {
     fontWeight: '700',
@@ -139,5 +152,12 @@ const styles = StyleSheet.create({
   pkgName: {
     fontSize: 12,
     color: '#666',
+  },
+  loading: {
+    fontSize: 20,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 100,
   },
 });

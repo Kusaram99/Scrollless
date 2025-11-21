@@ -12,10 +12,10 @@ import BackgroundService from 'react-native-background-actions';
 // imported data for tab's functionalities
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import Home from './src/Screens/home/Home';
 import ImportApp from './src/Screens/importApp/ImportApp';
 import ManageTime from './src/Screens/manageTime/ManageTime';
+import Setting from './src/Screens/setting/Setting';
 import RemixIcon from 'react-native-remix-icon';
 
 // hooks
@@ -47,14 +47,14 @@ const App = () => {
     // for testing only
 
     const storedApps = await getApps();
-    console.log('storedApps from storage: ', storedApps);
+    // console.log('storedApps from storage: ', storedApps);
 
     // update ref
     appUsageRef.current = storedApps; // Store in ref for quick access
 
     // start background service
     startBackgroundService();
-    Alert.alert('🎉 Setup Done', 'Background service started');
+    Alert.alert('🎉 Setup Done', 'Background service is started');
   }, []);
 
   // const saveAppUsage = useCallback(async updated => {
@@ -65,14 +65,17 @@ const App = () => {
   // Function to show blocking alert when time limit is exceeded
   const showBlockingAlert = useCallback(
     async (appName, updatedAppData, packageName) => {
-      console.log('blockAlert: ==============: ', appName);
+      // console.log('blockAlert: ==============: ', appName);
       const now = Date.now();
       const lastNotified = updatedAppData.lastNotifiedAt || 0;
 
       if (now - lastNotified > 10000) {
-        await ForegroundApp.showOverlay(appName, 'Time’s up! Let’s get back to your goals 💪');
+        await ForegroundApp.showOverlay(
+          appName,
+          'Time’s up! Let’s get back to your goals 💪',
+        );
 
-        console.log('showBlockingAlert: ', packageName);
+        // console.log('showBlockingAlert: ', packageName);
         // Update last notified time
         updatedAppData.lastNotifiedAt = now;
       }
@@ -88,10 +91,9 @@ const App = () => {
     try {
       // Check if the screen is ON using native module
       const isScreenOn = await ForegroundApp.isScreenOn();
-      console.log('isScreenOn:', isScreenOn);
+      // console.log('isScreenOn:', isScreenOn);
       // If screen is OFF, skip tracking logic and reset references
-      if (!isScreenOn) {
-        console.log('Screen is off. Skipping usage tracking.');
+      if (!isScreenOn) { 
 
         // Reset last known app and timestamp to avoid counting incorrect time
         lastAppRef.current = null;
@@ -102,7 +104,7 @@ const App = () => {
       // Get the currently open foreground app from native code
       const packageName = await ForegroundApp.getCurrentForegroundApp();
       lastAppRef.current = packageName; // Update last known app
-      console.log('Current foreground app:', packageName);
+      // console.log('Current foreground app:', packageName);
       updatePackageTracking(); // Call to update package tracking
 
       // update lastAppRef
@@ -128,14 +130,14 @@ const App = () => {
       const lastApp = lastAppRef.current;
       const lastTimestamp = lastTimestampRef.current;
       const appUsage = appUsageRef.current || {};
-      console.log('lastApp===: ', lastApp);
+      // console.log('lastApp===: ', lastApp);
       // console.log('appUsage===: ', appUsage);
 
       // If we were tracking the same app and timestamp is valid
       if (appUsage[lastApp] && lastTimestamp) {
         // Calculate time spent in this app since the last check (in seconds)
         const deltaSeconds = Math.floor((currentTime - lastTimestamp) / 1000);
-        console.log('deltaSeconds=======: ', deltaSeconds);
+        // console.log('deltaSeconds=======: ', deltaSeconds);
 
         if (deltaSeconds > 0) {
           // Make a copy of the app usage object to update it
@@ -147,7 +149,7 @@ const App = () => {
           // If this app is in the tracked list
           if (updated[lastApp]) {
             // Get existing usage or 0 if not present for today
-            const currentUsage = updated[lastApp].usageHistory[todayKey] || 0; 
+            const currentUsage = updated[lastApp].usageHistory[todayKey] || 0;
 
             // Add the new duration to existing usage
             updated[lastApp].usageHistory[todayKey] =
@@ -173,7 +175,7 @@ const App = () => {
             // appUsageRef.current = updated; // Update the ref with new data
             // await updateUsedTime(updated); // Persist the updated usage data
             await updateAppData(lastApp, updated);
-            console.log('Updated usage data saved.');
+            // console.log('Updated usage data saved.');
           }
         }
       }
@@ -234,7 +236,7 @@ const App = () => {
     if (!granted) {
       Alert.alert(
         'Permission Required',
-        'Please grant Usage Access Permission Or Make sure it is Allowed.',
+        'Please make sure Usage Access Permission is Allowed!',
         [
           {
             text: 'Open Settings',
@@ -255,10 +257,10 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    ForegroundApp.showOverlay(
-      'appName',
-      'Your time limit is exceeded Your time limit is exceeded Your time limit is exceeded',
-    );
+    // ForegroundApp.showOverlay(
+    //   'appName',
+    //   'Your time limit is exceeded Your time limit is exceeded Your time limit is exceeded',
+    // );
     initializeImportedApps();
     checkUsageAccess();
   }, []);
@@ -316,6 +318,8 @@ const MyTabs = () => {
             iconName = focused ? 'apps-2-fill' : 'apps-2-line';
           } else if (route.name === 'Manage Time') {
             iconName = focused ? 'time-fill' : 'time-line';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings-3-fill' : 'settings-3-line';
           }
 
           return <RemixIcon name={iconName} size={size} color={color} />;
@@ -325,79 +329,9 @@ const MyTabs = () => {
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Manage Time" component={ManageTime} />
       <Tab.Screen name="Import App" component={ImportApp} />
+      <Tab.Screen name="Settings" tabBarIcon="admin-line" component={Setting} />
     </Tab.Navigator>
   );
 };
 
 export default App;
-
-// =======================================================
-
-// check current app is in list and manage time
-// 1. If app is not in list then do nothing
-// 2. if foreground app is in list then update timestamp that for do next task 3
-// 3. If foreground app is new then update last app and timestamp from start
-// 4. after this return true
-// 5. do next process of updatePackageTracking()
-
-// CASE:
-// 1. In first time it returns package name
-// 2. In second time it rreturns "NO_APP" error
-// 3. Again app changes it returns package name and again "NO_APP" error
-// 4. If screen is off then lastAppRef.current = null; lastTimestampRef.current = null;
-// When screen is on then again getCurrentAppUsageDuration() will call and it will return package name
-// and again return "NO_APP" error
-
-// TASK:
-// 1. Update the current app usage duration from opening to closing
-// 2. If current package is in list then start counting time then whenever
-// getCurrentAppUsageDuration() return 'NO_APP' error till app does not change
-// - So count time continue till app does not change
-// - If app change and current package is not in list then set lastAppRef.current = null; lastTimestampRef.current = null;
-
-// Solution:
-//
-
-// ============ It is OK
-// If foreground app is not in list then do nothing
-// If foreground app is new and it is in list then update timestamp with current time else don't update timestamp
-// If foreground app is in list then update timestamp with current time ===> (Wrong logic)
-// -  If I do this then time count will be 0 or wrong
-// previous package and current package is same and it is in list
-// update current app timestamp
-
-// =======================================================================
-
-// console.log('Current foreground app:', packageName);
-
-// lastAppRef.current = packageName;
-// calling updatePackageTracking
-// If foreground app is new
-// when screen will off then lastAppRef.current = null; // tow way to set null, 1. in app starting, 2. when screen is off
-// lastTimestampRef.current = null; // two way to set null, 1. in app starting, 2. when screen is off
-
-// case 1: when app start Then getCurrentForegroundApp() returns current foreground app 2 times after returns "NO_APP" Error
-// case 2: When foreground app is changed then again getCurrentForegroundApp() returns current foreground app 2 times after returns "NO_APP" Error
-// case 3: when screen will off: lastAppRef.current = null; lastTimestampRef.current = null; in screen on case 1.
-
-// DO
-// You have to manage timeStamp of app in only Try
-// Assume after ruterning package name 2 times When
-// -"NO_APP" error will come that time consider your current foreground app is still in foreground.
-// When screen off:
-// - Do lastAppRef.current = null; lastTimestampRef.current = null;
-// - because we want to check again current app again
-
-//  it is in list then update timestamp with current time else don't update timestamp
-// if (checkCurrentApp(packageName)) {
-
-// }
-// await updatePackageTracking();
-
-// =================================================================================
-
-// =============== goal
-// if app in list then add used time in its data
-// update last used time
-// when screen is off:     lastAppRef.current = null;
-// lastTimestampRef.current = 0;

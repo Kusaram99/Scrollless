@@ -1,0 +1,71 @@
+
+// =======================================================
+
+// check current app is in list and manage time
+// 1. If app is not in list then do nothing
+// 2. if foreground app is in list then update timestamp that for do next task 3
+// 3. If foreground app is new then update last app and timestamp from start
+// 4. after this return true
+// 5. do next process of updatePackageTracking()
+
+// CASE:
+// 1. In first time it returns package name
+// 2. In second time it rreturns "NO_APP" error
+// 3. Again app changes it returns package name and again "NO_APP" error
+// 4. If screen is off then lastAppRef.current = null; lastTimestampRef.current = null;
+// When screen is on then again getCurrentAppUsageDuration() will call and it will return package name
+// and again return "NO_APP" error
+
+// TASK:
+// 1. Update the current app usage duration from opening to closing
+// 2. If current package is in list then start counting time then whenever
+// getCurrentAppUsageDuration() return 'NO_APP' error till app does not change
+// - So count time continue till app does not change
+// - If app change and current package is not in list then set lastAppRef.current = null; lastTimestampRef.current = null;
+
+// Solution:
+//
+
+// ============ It is OK
+// If foreground app is not in list then do nothing
+// If foreground app is new and it is in list then update timestamp with current time else don't update timestamp
+// If foreground app is in list then update timestamp with current time ===> (Wrong logic)
+// -  If I do this then time count will be 0 or wrong
+// previous package and current package is same and it is in list
+// update current app timestamp
+
+// =======================================================================
+
+// console.log('Current foreground app:', packageName);
+
+// lastAppRef.current = packageName;
+// calling updatePackageTracking
+// If foreground app is new
+// when screen will off then lastAppRef.current = null; // tow way to set null, 1. in app starting, 2. when screen is off
+// lastTimestampRef.current = null; // two way to set null, 1. in app starting, 2. when screen is off
+
+// case 1: when app start Then getCurrentForegroundApp() returns current foreground app 2 times after returns "NO_APP" Error
+// case 2: When foreground app is changed then again getCurrentForegroundApp() returns current foreground app 2 times after returns "NO_APP" Error
+// case 3: when screen will off: lastAppRef.current = null; lastTimestampRef.current = null; in screen on case 1.
+
+// DO
+// You have to manage timeStamp of app in only Try
+// Assume after ruterning package name 2 times When
+// -"NO_APP" error will come that time consider your current foreground app is still in foreground.
+// When screen off:
+// - Do lastAppRef.current = null; lastTimestampRef.current = null;
+// - because we want to check again current app again
+
+//  it is in list then update timestamp with current time else don't update timestamp
+// if (checkCurrentApp(packageName)) {
+
+// }
+// await updatePackageTracking();
+
+// =================================================================================
+
+// =============== goal
+// if app in list then add used time in its data
+// update last used time
+// when screen is off:     lastAppRef.current = null;
+// lastTimestampRef.current = 0;

@@ -21,12 +21,12 @@ const ManageTime = () => {
   const [apps, setApps] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [modalResetVisible, setModalResetVisible] = useState(false);
-  // const [resetApp, setResetApp] = useState(null);
+  const [loader, setLoader] = useState(false);
   const todayKey = new Date().toLocaleDateString('en-CA', {
     timeZone: 'Asia/Kolkata',
   }); // YYYY-MM-DD
 
-  const defaultTimeLimit = 20 * 60; // default time limit in seconds (30 minutes)
+  const defaultTimeLimit = 1 * 60; // default time limit in seconds (30 minutes)
 
   // fetch apps from storage
 
@@ -34,6 +34,7 @@ const ManageTime = () => {
     useCallback(() => {
       const fetchApps = async () => {
         try {
+          setLoader(true);
           const appsFromStorage = await getApps();
           // Transform the object into an array
           const usageArray = Object.entries(appsFromStorage).map(
@@ -42,10 +43,12 @@ const ManageTime = () => {
               ...data,
             }),
           );
-          console.log('Manage time components:', usageArray);
+          // console.log('Manage time components:', usageArray);
           setApps(usageArray);
         } catch (error) {
           console.error('Error fetching apps:', error);
+        } finally {
+          setLoader(false);
         }
       };
       fetchApps();
@@ -69,7 +72,7 @@ const ManageTime = () => {
         if (!usageHistory) return;
         // extract used time for today
         const usedTime = usageHistory ? usageHistory[todayKey] || 0 : 0;
-        console.log('Used time for today: ', usedTime);
+        // console.log('Used time for today: ', usedTime);
         // if used time is greater than default time limit then show alert and return
         if (usedTime >= defaultTimeLimit) {
           // Format used time for alert
@@ -106,7 +109,7 @@ const ManageTime = () => {
         updateAppState(updatedApp);
       }
       setModalResetVisible(false);
-      console.log('resetAppDataHandler isReady: ', isReady);
+      // console.log('resetAppDataHandler isReady: ', isReady);
     } catch (error) {
       console.error('Error in resetAppDataHandler:', error);
     }
@@ -224,20 +227,20 @@ const ManageTime = () => {
       </View>
 
       <View style={styles.actions}>
-        {/* Increase Button */}
-        <Pressable
-          style={[styles.button, styles.increaseButton]}
-          onPress={() => handleIncrease(item)}
-        >
-          <Text style={styles.buttonText}>+10 min</Text>
-        </Pressable>
-
         {/* Decrease Button */}
         <Pressable
           style={[styles.button, styles.decreaseButton]}
           onPress={() => handleDecrease(item)}
         >
           <Text style={styles.buttonText}>-10 min</Text>
+        </Pressable>
+
+        {/* Increase Button */}
+        <Pressable
+          style={[styles.button, styles.increaseButton]}
+          onPress={() => handleIncrease(item)}
+        >
+          <Text style={styles.buttonText}>+10 min</Text>
         </Pressable>
 
         {/* Reset Button (kept same) */}
@@ -250,6 +253,11 @@ const ManageTime = () => {
       </View>
     </View>
   );
+
+  // loader
+  if (loader) {
+    return <Text style={styles.loading}>Loading...</Text>;
+  }
 
   return (
     <View style={styles.container}>
@@ -300,7 +308,9 @@ export default ManageTime;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingTop: 40,
+    // paddingBottom: 10,
+    paddingHorizontal: 30,
     backgroundColor: '#fff',
   },
   heading: {
@@ -413,5 +423,12 @@ const styles = StyleSheet.create({
 
   decreaseButton: {
     backgroundColor: '#F44336', // red
+  },
+  loading: {
+    fontSize: 20,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 100,
   },
 });

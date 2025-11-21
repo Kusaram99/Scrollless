@@ -16,42 +16,109 @@ const { width: screenWidth } = Dimensions.get('window');
 const Home = () => {
   const [appsData, setAppsData] = useState({});
   const { getDataForChart } = useAppStorage();
+  // const [loading, setLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
         try {
+          // setLoading(true);
           const data = await getDataForChart();
-          console.log('Chart data: ', data);
+          // console.log('Chart data: ', data);
           setAppsData(data || {});
         } catch (error) {
           console.error('Error fetching chart data:', error);
+        } finally {
+          // setLoading(false);
         }
       };
       fetchData();
     }, []),
   );
 
+  // convert time in hours, minutes and sconds
   const countTodayScreenTimes = _ => {
-    let total = 0;
+    let seconds = 0;
     const todayKey = new Date().toISOString().split('T')[0];
     Object.values(appsData).forEach(app => {
       if (app.usageHistory && app.usageHistory[todayKey]) {
-        total += app.usageHistory[todayKey];
+        seconds += app.usageHistory[todayKey];
       }
     });
-    return total;
+
+    if (seconds < 60) {
+      return `${seconds}s`;
+    }
+
+    // convert to minutes
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (minutes < 60) {
+      if (remainingSeconds === 0) {
+        return `${minutes}m`;
+      }
+      return `${minutes}m ${remainingSeconds}s`;
+    }
+
+    // convert to hours
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    if (remainingMinutes === 0) {
+      return `${hours}h`;
+    }
+
+    return `${hours}h ${remainingMinutes}m`;
+  };
+
+  // each application time counter
+  const eachApppTimeCounter = app => {
+    let seconds = 0;
+    // generate today key
+    const todayKey = new Date().toISOString().split('T')[0];
+    // check if todayKey is present in usageHistory
+    if (app.usageHistory && app.usageHistory[todayKey]) {
+      seconds = app.usageHistory[todayKey];
+    } else {
+      return '0s';
+    }
+
+    if (seconds < 60) {
+      return `${seconds}s`;
+    }
+
+    // convert to minutes
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (minutes < 60) {
+      if (remainingSeconds === 0) {
+        return `${minutes}m`;
+      }
+      return `${minutes}m ${remainingSeconds}s`;
+    }
+
+    // convert to hours
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    if (remainingMinutes === 0) {
+      return `${hours}h`;
+    }
+
+    return `${hours}h ${remainingMinutes}m`;
   };
 
   const appArray = Object.values(appsData);
 
   const renderHeader = () => (
     <View style={styles.headerWrapper}>
-      <Text style={styles.heading}>Imported Apps</Text>
-      <Text style={styles.heading}>
-        Today toatal screen time: {countTodayScreenTimes()}
+      <Text style={{ textAlign: 'center', fontWeight: '500' }}>
+        Today toatal used time: {countTodayScreenTimes()}
       </Text>
 
+      {/* =================== imported app icons and name ==================== */}
       <View style={styles.headerAppList}>
         {appArray.map(app => (
           <View key={app.packageName} style={styles.headerAppItem}>
@@ -59,7 +126,7 @@ const Home = () => {
               source={{ uri: app.iconBase64 }}
               style={styles.appIconSmall}
             />
-            <Text style={styles.appNameSmall}>{app.appName}</Text>
+            <Text style={styles.appNameSmall}>{eachApppTimeCounter(app)}</Text>
           </View>
         ))}
       </View>
@@ -96,9 +163,7 @@ const Home = () => {
             {/* Line Chart */}
             <LineChart
               data={{
-                labels: dates.map(d =>
-                  new Date(d).toLocaleDateString('en-US', { day: '2-digit' }),
-                ),
+                labels: dates,
                 datasets: [
                   {
                     data: convertedValues,
@@ -149,19 +214,25 @@ const Home = () => {
     </View>
   );
 
+  // LOADER
+  // if (loading) {
+  //   return <Text style={styles.loading}>Loading...</Text>;
+  // }
+
   return (
-    <FlatList
-      data={[]} // using header & footer only
-      ListHeaderComponent={renderHeader}
-      ListFooterComponent={renderFooter}
-      renderItem={null}
-      keyExtractor={() => 'dummy'}
-      contentContainerStyle={styles.container}
-    />
+    <React.Fragment>
+      <Text style={styles.heading}>Home</Text>
+      <FlatList
+        data={[]} // using header & footer only
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
+        renderItem={null}
+        keyExtractor={() => 'dummy'}
+        contentContainerStyle={styles.container}
+      />
+    </React.Fragment>
   );
 };
-
-export default Home;
 
 const styles = StyleSheet.create({
   container: {
@@ -170,10 +241,10 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontWeight: '700',
-    fontSize: 20,
-    marginBottom: 12,
-    textAlign: 'center',
-    color: '#2D3142', // deep calm gray-blue instead of harsh black
+    fontSize: 18,
+    paddingTop: 50,
+    paddingBottom: 10,
+    paddingHorizontal: 30,
   },
   headerWrapper: {
     marginBottom: 20,
@@ -240,4 +311,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 10,
   },
+  loading: {
+    fontSize: 20,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 100,
+  },
 });
+
+export default Home;
